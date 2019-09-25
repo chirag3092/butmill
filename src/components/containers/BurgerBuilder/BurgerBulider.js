@@ -1,4 +1,5 @@
 import React, { Fragment } from 'react';
+import { connect } from 'react-redux';
 import Burger from '../../Burger/Burger';
 import BuildControls from '../../Burger/BuildControls';
 import Modal from '../../UI/Modal';
@@ -6,18 +7,10 @@ import OrderSummary from '../../Burger/OrderSummary';
 import axios from '../../../axios-order';
 import Spinner from '../../UI/Spinner';
 import withErrorHandler from '../../hoc/withErrorHandler';
-
-const ingredientPrice = {
-    salad: 5,
-    bacon: 10,
-    cheese: 15,
-    meat: 20 
-}
+import { ADD_INGREDIENTS, REMOVE_INGREDIENT } from '../../../store/actions';
 
 class BurgerBulider extends React.Component {
     state = {
-        ingredients : null,
-        totalprice: 30,
         purchasable: false,
         purchasing: false,
         loading: false,
@@ -25,15 +18,15 @@ class BurgerBulider extends React.Component {
     }
 
     componentDidMount() {
-        axios.get('https://butmill.firebaseio.com/ingredient.json')
-            .then(response => {
-                this.setState({ ingredients: response.data })
-                this.updatePurchaseState(response.data)       
-            })
-            .catch(error => {
-                this.setState({error: true});
-            })    
-        ;
+        // axios.get('https://butmill.firebaseio.com/ingredient.json')
+        //     .then(response => {
+        //         this.setState({ ingredients: response.data })
+        //         this.updatePurchaseState(response.data)       
+        //     })
+        //     .catch(error => {
+        //         this.setState({error: true});
+        //     })    
+        // ;
     }
 
     updatePurchaseState (ingredients) {
@@ -41,63 +34,24 @@ class BurgerBulider extends React.Component {
             .map(igkey => {
                 return ingredients[igkey]
             }).reduce((sum, el) => {
+                console.log("check ===> ",sum, el);
                 return sum+el;
             },0);
-        this.setState({ purchasable: sum >0 })    
+        return sum >0;
 
     }
 
-    addIngredientHandler = (type) => {
-        const oldcount = this.state.ingredients[type];
-        const updatecount = oldcount+1;
-        const updatedIngredient = {
-            ...this.state.ingredients,
-        }
-        updatedIngredient[type] = updatecount;
-        const priceAddition = ingredientPrice[type];
-        const oldPrice = this.state.totalprice;
-        const newPrice = oldPrice+priceAddition;
-        this.setState({totalprice: newPrice, ingredients: updatedIngredient});
-        this.updatePurchaseState(updatedIngredient);
-    }
-    removeIngredientHandler = (type) => {
-        const oldcount = this.state.ingredients[type];
-        if(oldcount<=0) {
-            return;
-        }
-        const updatecount = oldcount-1;
-        const updatedIngredient = {
-            ...this.state.ingredients,
-        }
-        updatedIngredient[type] = updatecount;
-        const priceDeduction = ingredientPrice[type];
-        const oldPrice = this.state.totalprice;
-        const newPrice = oldPrice-priceDeduction;
-        this.setState({totalprice: newPrice, ingredients: updatedIngredient});
-        this.updatePurchaseState(updatedIngredient);
-    }
-    
     purchaseHandler = (isOpen) => {
         this.setState({purchasing: isOpen});
     }
 
     purchaseContinueHandler = () => {
-        const queryParams = [];
-        const ingredientsType = Object.keys(this.state.ingredients);
-        ingredientsType.map(ingredient => (
-            queryParams.push(`${ingredient}=${this.state.ingredients[ingredient]}`)
-        ));
-        queryParams.push(`price=${this.state.totalprice}`);
-        const queryString = queryParams.join('&');
-        this.props.history.push({
-           pathname: '/checkout',
-           search: `?${queryString}` 
-        });
+        this.props.history.push('/checkout');
     }
 
     render() {
         const disableInfo = {
-            ...this.state.ingredients
+            ...this.props.ings
         };
         for(var key in disableInfo) {
             disableInfo[key] = disableInfo[key] <= 0;
@@ -106,23 +60,23 @@ class BurgerBulider extends React.Component {
             <Fragment>
                 <Modal show={this.state.purchasing} close={this.purchaseHandler} >
                     { this.state.loading && <Spinner /> }
-                    {!this.state.loading && this.state.ingredients && <OrderSummary 
-                        ingredients={this.state.ingredients} 
+                    {!this.state.loading && this.props.ings && <OrderSummary 
+                        ingredients={this.props.ings} 
                         close={this.purchaseHandler} 
                         continue={this.purchaseContinueHandler}
-                        totalPrice={this.state.totalprice}
+                        totalPrice={this.props.finalPrice}
                     />}
                 </Modal>
-                { !this.state.ingredients && <Spinner /> }
-                { this.state.ingredients &&
+                { !this.props.ings && <Spinner /> }
+                { this.props.ings &&
                     <Fragment>
-                        <Burger ingredients={this.state.ingredients} />
+                        <Burger ingredients={this.props.ings} />
                         <BuildControls 
-                            ingredientAdd={this.addIngredientHandler} 
-                            ingredientRemove={this.removeIngredientHandler}
+                            ingredientAdd={this.props.onIngredientsAdd} 
+                            ingredientRemove={this.props.onIngredientsDelete}
                             disabled={disableInfo}
-                            price={this.state.totalprice}
-                            purchasable={this.state.purchasable}
+                            price={this.props.finalPrice}
+                            purchasable={this.updatePurchaseState(this.props.ings)}
                             ordered = {this.purchaseHandler}
                         />
                     </Fragment>    
@@ -132,4 +86,19 @@ class BurgerBulider extends React.Component {
         )
     }
 }
-export default withErrorHandler(BurgerBulider, axios);
+
+const mapStateToProps = state => {
+    return {
+        ings: state.ingredients,
+        finalPrice: state.totalPrice,
+    }
+};
+
+const mapDispatchToProps = dispatch => {
+    return {
+        onIngredientsAdd : (ingredient) => dispatch({ type: ADD_INGREDIENTS, ingredientName: ingredient }),
+        onIngredientsDelete : (ingredient) => dispatch({ type: REMOVE_INGREDIENT, ingredientName: ingredient }),
+    }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(withErrorHandler(BurgerBulider, axios));

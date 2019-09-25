@@ -1,4 +1,5 @@
-import React, { Fragment }  from 'react';
+import React from 'react';
+import { connect } from 'react-redux';
 import Button from '../../../UI/Button';
 import './contactData.css';
 import axios from '../../../../axios-order';
@@ -7,30 +8,119 @@ import Input from '../../../UI/Input';
 
 class ContactData extends React.Component {
     state = {
-        name: '',
-        email: '',
-        address: {
-            street: 'Test Flat',
-            zipcode: '123456',
+        orderData: {
+            name: {
+                elementType: 'input',
+                elementConfig: {
+                    type: 'text',
+                    placeholder: 'Your Name'
+                },
+                value: '',
+                validation: {
+                    required: true,
+                },
+                valid: false,
+                touched: false,
+            },
+            buliding: {
+                elementType: 'input',
+                elementConfig: {
+                    type: 'text',
+                    placeholder: 'Your Building'
+                },
+                value: '',
+                validation: {
+                    required: true,
+                },
+                valid: false,
+                touched: false,
+            },
+            zipcode: {
+                elementType: 'input',
+                elementConfig: {
+                    type: 'text',
+                    placeholder: 'Your zipcode'
+                },
+                value: '',
+                validation: {
+                    required: true,
+                    minLength: 6,
+                    maxLength: 10,
+                },
+                valid: false,
+                touched: false,
+            },
+            country: {
+                elementType: 'input',
+                elementConfig: {
+                    type: 'text',
+                    placeholder: 'Your country'
+                },
+                value: '',
+                validation: {
+                    required: true,
+                },
+                valid: false,
+                touched: false,
+            },
+            email: {
+                elementType: 'input',
+                elementConfig: {
+                    type: 'email',
+                    placeholder: 'Your E-mail'
+                },
+                value: '',
+                validation: {
+                    required: true,
+                },
+                valid: false,
+                touched: false,
+            },
+            deliveryMethod: {
+                elementType: 'select',
+                elementConfig: {
+                    options: [
+                        {value: 'fastes', displayValue: 'Fastes'},
+                        {value: 'regular', displayValue: 'Regular'},
+                    ]
+                },
+                value: '',
+                validation: {},
+                valid: true,
+            },
         },
         loading: false,
     }
+
+    checkValidation(value, rules) {
+        let isvalid = true;
+        
+        if(rules.required) {
+            isvalid = value.trim() !== '' && isvalid ;
+        }
+        if(rules.minLength) {
+            isvalid = value.length >= rules.minLength && isvalid;
+        }
+
+        if(rules.maxLength) {
+            isvalid = value.length <= rules.maxLength && isvalid;
+        }
+
+        return isvalid;
+    }
+
     orderHandler = (e) => {
         e.preventDefault();
         this.setState({ loading: true });
+        const formData = {};
+        const formElement =  Object.keys(this.state.orderData);
+        formElement.map(formValue => (
+            formData[formValue] = this.state.orderData[formValue].value
+        ));
         const orderData = {
             ingredients: this.props.ingredients,
             price: this.props.price,
-            customerData: {
-                name: 'Chirag Patel',
-                address: {
-                    buliding: 'Test Flat',
-                    zipcode: '123456',
-                    country: 'India'
-                },
-                email: 'chirag.3092@gmail.com'
-            },
-            deliveryMethod: 'fastestdd'
+            customerData: formData,
         };
         
         axios.post('/orders.json',orderData)
@@ -42,22 +132,58 @@ class ContactData extends React.Component {
                 this.setState({ loading: false });
             });
     }
+    elementChangeHandler = (event, inputIdentifier ) => {
+        const updatedOrderForm = {
+            ...this.state.orderData
+        }
+        const updatedFormElement = {
+            ...updatedOrderForm[inputIdentifier],
+            value: event.target.value,
+            touched: true,
+        }
+        updatedFormElement.valid = this.checkValidation(updatedFormElement.value, updatedFormElement.validation);
+        updatedOrderForm[inputIdentifier] = updatedFormElement;
+        console.log(updatedFormElement);
+        this.setState({ orderData: updatedOrderForm});
+        
+    }
     render() {
+        const formElements = [];
+        const formData = Object.keys(this.state.orderData);
+        formData.map(key => (
+            formElements.push({
+                id: key,
+                config: this.state.orderData[key]
+            })
+        ));
         return (    
             <div className="contactData" >
                 <h3>Enter Your Contact Data</h3>
+                <h2><strong>{this.props.price}</strong> </h2>
                 { this.props.loading ? <Spinner /> : 
-                    <Fragment>
-                        <Input inputType="input" type="text" name="name" placeholder="Your Name" />
-                        <Input inputType="input" type="text" name="email" placeholder="Your Email" />
-                        <Input inputType="input" type="text" name="street" placeholder="Street" />
-                        <Input inputType="input" type="text" name="zipcode" placeholder="zipcode" />
-                        <Button name="Order" clicked={this.orderHandler} className="Success" />
-                    </Fragment>    
+                    <form onSubmit={this.orderHandler} >
+                        { formElements.map(formElement =>(
+                            <Input 
+                                key={formElement.id}
+                                elementType={formElement.config.elementType}
+                                elementConfig={formElement.config.elementConfig}
+                                value={formElement.config.value}
+                                invalid={!formElement.config.valid}
+                                touched={formElement.config.touched}
+                                changeHandler={(event) =>this.elementChangeHandler(event, formElement.id)}
+                            />
+                        )) }
+                        <Button name="Order" className="Success" />
+                    </form>    
                 }
             </div>
         )
     }
 }
-
-export default ContactData;
+const mapStateToProps = state => {
+    return {
+        ingredients: state.ingredients,
+        price: state.totalPrice,
+    }
+}
+export default connect(mapStateToProps)(ContactData);

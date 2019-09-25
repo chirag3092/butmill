@@ -25,3 +25,12 @@
     outline: none;
     background-color: #ccc;
 }
+
+.error {
+    border: 1px solid rgb(255, 0, 0);
+    background-color: #FDA49A;
+}
+.ValidationError {
+    color: red;
+    margin: 5px 0;
+} 

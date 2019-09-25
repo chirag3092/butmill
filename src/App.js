@@ -11,9 +11,9 @@ function App() {
     <div className="App">
       <Layout>
         <Switch>
-          <Route path="/checkout" exact component={Checkout} />
-          <Route path="/orders" exact component={Orders} />    
-          <Route path="/" exact component={BurgerBulider} />
+          <Route path="/checkout" component={Checkout} />
+          <Route path="/orders" component={Orders} />    
+          <Route path="/" component={BurgerBulider} />
         </Switch>
       </Layout>
     </div>
