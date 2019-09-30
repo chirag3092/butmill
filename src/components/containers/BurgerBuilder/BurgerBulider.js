@@ -1,5 +1,6 @@
 import React, { Fragment } from 'react';
 import { connect } from 'react-redux';
+import { addIngredients, removeIngredients, initIngredients } from '../../../store/actions/burgerBuilder';
 import Burger from '../../Burger/Burger';
 import BuildControls from '../../Burger/BuildControls';
 import Modal from '../../UI/Modal';
@@ -7,26 +8,16 @@ import OrderSummary from '../../Burger/OrderSummary';
 import axios from '../../../axios-order';
 import Spinner from '../../UI/Spinner';
 import withErrorHandler from '../../hoc/withErrorHandler';
-import { ADD_INGREDIENTS, REMOVE_INGREDIENT } from '../../../store/actions';
 
 class BurgerBulider extends React.Component {
     state = {
         purchasable: false,
         purchasing: false,
         loading: false,
-        error: null
     }
 
     componentDidMount() {
-        // axios.get('https://butmill.firebaseio.com/ingredient.json')
-        //     .then(response => {
-        //         this.setState({ ingredients: response.data })
-        //         this.updatePurchaseState(response.data)       
-        //     })
-        //     .catch(error => {
-        //         this.setState({error: true});
-        //     })    
-        // ;
+        this.props.onInitIngredients();
     }
 
     updatePurchaseState (ingredients) {
@@ -34,7 +25,6 @@ class BurgerBulider extends React.Component {
             .map(igkey => {
                 return ingredients[igkey]
             }).reduce((sum, el) => {
-                console.log("check ===> ",sum, el);
                 return sum+el;
             },0);
         return sum >0;
@@ -81,23 +71,26 @@ class BurgerBulider extends React.Component {
                         />
                     </Fragment>    
                 }
-                {this.state.error && <p>ingredient's can't loaded...!!!</p> }
+                {this.props.error && <p>ingredient's can't loaded...!!!</p> }
             </Fragment>
         )
     }
 }
 
 const mapStateToProps = state => {
+    const { burgerBuilder, totalPrice, error } = state;
     return {
-        ings: state.ingredients,
-        finalPrice: state.totalPrice,
+        ings: burgerBuilder.ingredients,
+        finalPrice: totalPrice,
+        error
     }
 };
 
 const mapDispatchToProps = dispatch => {
     return {
-        onIngredientsAdd : (ingredient) => dispatch({ type: ADD_INGREDIENTS, ingredientName: ingredient }),
-        onIngredientsDelete : (ingredient) => dispatch({ type: REMOVE_INGREDIENT, ingredientName: ingredient }),
+        onIngredientsAdd : (ingredient) => dispatch(addIngredients(ingredient)),
+        onIngredientsDelete : (ingredient) => dispatch(removeIngredients(ingredient)),
+        onInitIngredients : () => dispatch(initIngredients()),
     }
 }
 

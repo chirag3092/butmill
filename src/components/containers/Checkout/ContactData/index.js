@@ -181,9 +181,10 @@ class ContactData extends React.Component {
     }
 }
 const mapStateToProps = state => {
+    const { burgerBuilder, totalPrice } = state;
     return {
-        ingredients: state.ingredients,
-        price: state.totalPrice,
+        ings: burgerBuilder.ingredients,
+        price: totalPrice,
     }
 }
 export default connect(mapStateToProps)(ContactData);
