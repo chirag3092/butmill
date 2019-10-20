@@ -4,6 +4,9 @@ import Burger from '../../Burger/Burger';
 import Button from '../../UI/Button';
 
 const CheckoutSummary = (props) => {
+    if(!props.ingredients) {
+        window.location.href = '/';
+    }
     return (
         <div className="checkoutsummary" >
             <h1>We hope it tasted!!</h1>

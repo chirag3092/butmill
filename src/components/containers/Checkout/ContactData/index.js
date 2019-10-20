@@ -1,8 +1,8 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import { purchaseBurger } from '../../../../store/actions/order';
 import Button from '../../../UI/Button';
 import './contactData.css';
-import axios from '../../../../axios-order';
 import Spinner from '../../../UI/Spinner';
 import Input from '../../../UI/Input';
 
@@ -84,12 +84,11 @@ class ContactData extends React.Component {
                         {value: 'regular', displayValue: 'Regular'},
                     ]
                 },
-                value: '',
+                value: 'fastes',
                 validation: {},
                 valid: true,
             },
         },
-        loading: false,
     }
 
     checkValidation(value, rules) {
@@ -111,26 +110,18 @@ class ContactData extends React.Component {
 
     orderHandler = (e) => {
         e.preventDefault();
-        this.setState({ loading: true });
         const formData = {};
         const formElement =  Object.keys(this.state.orderData);
         formElement.map(formValue => (
             formData[formValue] = this.state.orderData[formValue].value
         ));
         const orderData = {
-            ingredients: this.props.ingredients,
+            ingredients: this.props.ings,
             price: this.props.price,
             customerData: formData,
         };
         
-        axios.post('/orders.json',orderData)
-            .then(response => {
-                this.setState({ loading: false });
-                this.props.history.push('/');
-            })
-            .catch(error => {
-                this.setState({ loading: false });
-            });
+        this.props.onPurchaseBurger(orderData);
     }
     elementChangeHandler = (event, inputIdentifier ) => {
         const updatedOrderForm = {
@@ -143,7 +134,6 @@ class ContactData extends React.Component {
         }
         updatedFormElement.valid = this.checkValidation(updatedFormElement.value, updatedFormElement.validation);
         updatedOrderForm[inputIdentifier] = updatedFormElement;
-        console.log(updatedFormElement);
         this.setState({ orderData: updatedOrderForm});
         
     }
@@ -180,11 +170,20 @@ class ContactData extends React.Component {
         )
     }
 }
-const mapStateToProps = state => {
-    const { burgerBuilder, totalPrice } = state;
+const mapStateToProps = ({ burgerBuilder, order }) => {
+    const { ingredients, totalPrice } = burgerBuilder;
+    const { loading } = order;
     return {
-        ings: burgerBuilder.ingredients,
+        ings: ingredients,
         price: totalPrice,
+        loading,
     }
 }
-export default connect(mapStateToProps)(ContactData);
+
+const mapDispatchToProps = dispatch => {
+    return {
+        onPurchaseBurger: (orderData) => dispatch(purchaseBurger(orderData)),
+    }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(ContactData);

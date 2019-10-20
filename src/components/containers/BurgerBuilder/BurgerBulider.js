@@ -77,10 +77,10 @@ class BurgerBulider extends React.Component {
     }
 }
 
-const mapStateToProps = state => {
-    const { burgerBuilder, totalPrice, error } = state;
+const mapStateToProps = ({ burgerBuilder }) => {
+    const { ingredients, totalPrice, error } = burgerBuilder;
     return {
-        ings: burgerBuilder.ingredients,
+        ings: ingredients,
         finalPrice: totalPrice,
         error
     }
